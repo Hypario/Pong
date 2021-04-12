@@ -1,58 +1,31 @@
-#include <stdio.h>
+#include <ncurses.h>
 #include <stdlib.h>
+#include <stdio.h>
 
-#define SCREEN_WIDTH 80
-#define SCREEN_HEIGHT 25
-#define SCREEN_SIZE SCREEN_WIDTH * SCREEN_HEIGHT
-
-char screen[SCREEN_SIZE];
-
-#ifdef unix
-
-// init unix header
-#include <ctype.h>
-#include <termios.h>
-#include <unistd.h>
-
-#endif
-
-void InitScreen()
+int main(void) 
 {
-    // use ANSI VT100 escape sequences hide cursor and clear screen
-    #ifdef unix
-    system("clear"); // clear screen
-    printf("\x1b[?25l"); // hide cursor
-    #endif
-}
+    WINDOW *boite;
+    int key;
 
-void RefreshScreen()
-{
-    // clear screen
-    for (int screen_cell = 0; screen_cell < SCREEN_SIZE; screen_cell++)
-        if (!screen[screen_cell]) screen[screen_cell] = ' ';
+    initscr();              // Initialise la structure WINDOW et autres paramètres
+    noecho();
+    keypad(stdscr, TRUE);
+    
+    boite = subwin(stdscr, LINES, COLS, 0, 0);
+    box(boite, ACS_VLINE, ACS_HLINE); // ACS_VLINE et ACS_HLINE sont des constantes qui génèrent des bordures par défaut
 
-    // print buffer to stdout at coordintes (0, 0)
-    #ifdef unix
-    printf("\x1b[0;0H%s", screen); 
-    #endif
-}
+    while (1) {
+        if (getch() == 27) { // On attend que l'utilisateur appui sur une touche pour quitter
+            break;
+        }
 
-void Leave()
-{
-    #ifdef unix
-    printf("\x1b[?25h"); // show cursor
-    #endif
-}
-
-int main()
-{
-    InitScreen();
-
-    while(1)
-    {
-        RefreshScreen();
+        if ((key = getch()) != -1) {
+            if (key == 259) {
+                printf("go up !\n");
+            }
+        }
     }
+    endwin(); // Restaure les paramètres par défaut du terminal
 
-    Leave();
     return 0;
 }
