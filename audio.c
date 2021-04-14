@@ -120,7 +120,7 @@ int playBg(void)
 
 #ifdef LIBAUDIO
 	/* load data */
-	wave = WaveOpenFileForReading("test.wav");
+	wave = WaveOpenFileForReading("test2.wav");
 	if (!wave) {
 		return -1;
 	}
@@ -144,7 +144,7 @@ int playBg(void)
 			bufferData, wave->dataSize, wave->sampleRate);
 	TEST_ERROR("failed to load buffer data");
 #else
-	alutLoadWAVFile("test.wav", &format, &data, &size, &freq, &loop);
+	alutLoadWAVFile("test2.wav", &format, &data, &size, &freq, &loop);
 	TEST_ERROR("loading wav file");
 
 	alBufferData(buffer, format, data, size, freq);
