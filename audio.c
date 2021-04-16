@@ -173,8 +173,8 @@ int playBg(void)
 	alcCloseDevice(device);
 }
 
-/*
+
 int main(void) {
     //playBg();
     return 0;
-}*/
+}
