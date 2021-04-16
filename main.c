@@ -3,29 +3,42 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <ctype.h>
+
 #define DELAY 30000
 
 #define WIDTH_RECTANGLE 3
 #define HEIGHT_RECTANGLE 5
 
 typedef struct {
-    int pos_x;
-    int pos_y;
+    int x;
+    int y;
 } player_t;
 
+typedef struct {
+    int x;
+    int y;
+    int direction_x;
+    int direction_y;
+} ball_t;
+
 void render_player(WINDOW *window, player_t player) {
-    int x2 = player.pos_x + WIDTH_RECTANGLE, y2 = player.pos_y + HEIGHT_RECTANGLE;
+    int x2 = player.x + WIDTH_RECTANGLE, y2 = player.y + HEIGHT_RECTANGLE;
 
-    mvwhline(window, player.pos_y, player.pos_x,  0, WIDTH_RECTANGLE); // top line
-    mvwhline(window, y2, player.pos_x, 0, WIDTH_RECTANGLE); // bottom line
+    mvwhline(window, player.y, player.x,  0, WIDTH_RECTANGLE); // top line
+    mvwhline(window, y2, player.x, 0, WIDTH_RECTANGLE); // bottom line
 
-    mvwvline(window, player.pos_y, player.pos_x, 0, HEIGHT_RECTANGLE); // left line
-    mvwvline(window, player.pos_y, x2, 0, HEIGHT_RECTANGLE); // right line
+    mvwvline(window, player.y, player.x, 0, HEIGHT_RECTANGLE); // left line
+    mvwvline(window, player.y, x2, 0, HEIGHT_RECTANGLE); // right line
 
-    mvwaddch(window, player.pos_y, player.pos_x, ACS_ULCORNER);
-    mvwaddch(window, y2, player.pos_x, ACS_LLCORNER);
-    mvwaddch(window, player.pos_y, x2, ACS_URCORNER);
+    mvwaddch(window, player.y, player.x, ACS_ULCORNER);
+    mvwaddch(window, y2, player.x, ACS_LLCORNER);
+    mvwaddch(window, player.y, x2, ACS_URCORNER);
     mvwaddch(window, y2, x2, ACS_LRCORNER);
+}
+
+bool collision(player_t player, ball_t ball) {
+
 }
 
 int main(void) 
@@ -37,11 +50,13 @@ int main(void)
     
     timeout(1);             // used for getch
 
-    int x = 1, y = 1;
-
     int max_y = 0, max_x = 0, min_y = 1, min_x = 1;
 
-    int direction_x = 1, direction_y = 1;
+    ball_t ball;
+    ball.x = 1;
+    ball.y = 1;
+    ball.direction_x = 1;
+    ball.direction_y = 1;
 
     WINDOW *window;
     window = newwin(LINES, COLS, 0, 0);
@@ -51,12 +66,12 @@ int main(void)
     int key = ERR;
 
     player_t player1;
-    player1.pos_y = 2;
-    player1.pos_x = 2;
+    player1.x = 2;
+    player1.y = 2;
 
     player_t player2;
-    player2.pos_y = 2;
-    player2.pos_x = max_x - 2 - HEIGHT_RECTANGLE;
+    player2.x = max_x - 2 - HEIGHT_RECTANGLE;
+    player2.y = 2;
 
     while (key != 27) {
         getmaxyx(window, max_y, max_x); // stdscr is created because of initscr
@@ -64,7 +79,7 @@ int main(void)
 
         box(window, ACS_VLINE, ACS_HLINE); // ACS_VLINE et ACS_HLINE sont des constantes qui génèrent des bordures par défaut
 
-        mvwprintw(window, y, x, "o");
+        mvwprintw(window, ball.y, ball.x, "o");
 
         usleep(DELAY);
 
@@ -72,31 +87,31 @@ int main(void)
         render_player(window, player2);
 
         // move the ball
-        if (x + direction_x >= max_x - 1 || x + direction_x < min_x) {
-            direction_x *= -1;
+        if (ball.x + ball.direction_x >= max_x - 1 || ball.x + ball.direction_x < min_x) {
+            ball.direction_x *= -1;
         }
 
-        if (y + direction_y >= max_y -1 || y + direction_y < min_y) {
-            direction_y *= -1;
+        if (ball.y + ball.direction_y >= max_y -1 || ball.y + ball.direction_y < min_y) {
+            ball.direction_y *= -1;
         }
 
-        x += direction_x;
-        y += direction_y;
+        ball.x += ball.direction_x;
+        ball.y += ball.direction_y;
 
         // move player 1
-        if (key == 122 && player1.pos_y > min_y) {
-            player1.pos_y -= 1;
+        if (key == 122 && player1.y > min_y) {
+            player1.y -= 1;
         }
-        if (key == 115 && player1.pos_y + HEIGHT_RECTANGLE < max_y - 2) {
-            player1.pos_y += 1;
+        if (key == 115 && player1.y + HEIGHT_RECTANGLE < max_y - 2) {
+            player1.y += 1;
         }
 
         // move player 2
-        if (key == 259 && player2.pos_y  > min_y ) {
-            player2.pos_y -= 1;
+        if (key == 259 && player2.y  > min_y ) {
+            player2.y -= 1;
         }
-        if (key == 258 && player2.pos_y + HEIGHT_RECTANGLE < max_y - 2) {
-            player2.pos_y += 1;
+        if (key == 258 && player2.y + HEIGHT_RECTANGLE < max_y - 2) {
+            player2.y += 1;
         }
 
         refresh();
