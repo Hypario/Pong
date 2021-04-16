@@ -10,6 +10,7 @@
 #include <sys/msg.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <signal.h>
 
 #define DELAY 30000
 #define PROJID 644
@@ -21,6 +22,7 @@ int fifo;
 key_t msg_key;
 int id_bal;
 pthread_t keyboard;
+bool endgame = false;
 
 typedef struct {
     int x;
@@ -58,6 +60,13 @@ void initTube(void) {
 void initBal(void) {
     msg_key = ftok("pong.queue", PROJID );
     CHECK(id_bal = msgget(msg_key, IPC_CREAT), "msgget()");
+}
+
+void derouteSig(int sig) {
+    if (sig == SIGUSR1) {
+        // END GAME
+        endgame = true;
+    }
 }
 
 void *readKB() {
@@ -106,6 +115,7 @@ void *readKB() {
             case 27:
             pressed = true;
             msg.player = -1;
+            kill(getpid(), SIGUSR1);
             break;
 
             default:
@@ -148,6 +158,7 @@ int main(void)
 {
     initBal();
     initTube();
+    signal(SIGUSR1, derouteSig);
     initscr();              // Initialise la structure WINDOW et autres paramètres
     noecho();               // no display when typing
     keypad(stdscr, TRUE);
@@ -189,7 +200,12 @@ int main(void)
 
     mail mail;
 
-    while (key != 27) {
+    while (!endgame) {
+
+        // check scores of players
+        if (player1.score == 10 || player2.score == 10) {
+            kill(getpid(), SIGUSR1);
+        }
         
         getmaxyx(window, max_y, max_x); // stdscr is created because of initscr
         werase(window); // clean content of window
@@ -219,9 +235,9 @@ int main(void)
         }
 
         if (ball.x + ball.direction_x >= max_x || ball.x + ball.direction_x < min_x) {
-            if (ball.direction_x >= max_x ) {
+            if (ball.x + ball.direction_x >= max_x ) {
                 player1.score += 1;
-            } else {
+            } else if (ball.x + ball.direction_x < min_x) {
                 player2.score += 1;
             }
             ball.x = COLS / 2;
@@ -285,6 +301,12 @@ int main(void)
     delwin(window);
     CHECK(msgctl(id_bal, IPC_RMID, NULL), "Erreur lors de la suppression\n");
     endwin();
+
+
+    printf("---------------------------------------------------------------------------\n");
+    printf("Score du joueur 1 : %d\n", player1.score);
+    printf("Score du joueur 2 : %d\n", player2.score);
+    printf("----------------------------------------------------------------------------\n");
 
     return 0;
 }
