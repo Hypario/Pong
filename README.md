@@ -21,9 +21,11 @@ Projet de jeu en C avec utilisation d'échange entre processus par signal, boît
 
 ### Execution du projet
 
-(je laisse fabien faire cette ligne)
+Après avoir compilé le projet avec la commande make, exécuter :
+`./main.o`
 
 ## Crédit
 
 - Exemple d'utilisation OpenAL en C pour lire un fichier WAV : [ici](https://github.com/ffainelli/openal-example)
 - Musique de fond : [DAFT PUNK - Robot Rock](https://www.youtube.com/watch?v=sFZjqVnWBhc)
+
