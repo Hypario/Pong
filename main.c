@@ -180,7 +180,10 @@ int main(void)
 
     pthread_create(&keyboard, NULL, readKB, NULL);
 
+    mail mail;
+
     while (key != 27) {
+        
         getmaxyx(window, max_y, max_x); // stdscr is created because of initscr
         werase(window); // clean content of window
 
@@ -229,19 +232,26 @@ int main(void)
         ball.y += ball.direction_y;
 
         // move player 1
-        if (key == 122 && player1.y > min_y) {
-            player1.y -= 2;
-        }
-        if (key == 115 && player1.y + HEIGHT_RECTANGLE < max_y - 2) {
-            player1.y += 2;
-        }
+        switch (mail.msg.player) {
+            case 1:             
+                if (mail.msg.up && player1.y > min_y) {
+                    player1.y -=2;
+                } else if (mail.msg.down && player1.y + HEIGHT_RECTANGLE < max_y-2) {
+                    player1.y += 2;
+                }
+            break;
 
-        // move player 2
-        if (key == 259 && player2.y  > min_y ) {
-            player2.y -= 2;
-        }
-        if (key == 258 && player2.y + HEIGHT_RECTANGLE < max_y - 2) {
-            player2.y += 2;
+            case 2:
+                if (mail.msg.up && player2.y > min_y) {
+                    player2.y -=2;
+                } else if (mail.msg.down && player2.y + HEIGHT_RECTANGLE < max_y-2) {
+                    player2.y += 2;
+                }
+            break;
+
+            default:
+            break;
+
         }
 
         refresh();
@@ -254,7 +264,7 @@ int main(void)
         write(fifo, &kp, sizeof(keypressed));
 
 
-        mail mail;
+        
         msgrcv(id_bal, &mail, sizeof(message), 1, 0);
         if (mail.msg.player == 1) {
             if (mail.msg.up) {key = 122;} else {key = 115;}
