@@ -144,7 +144,7 @@ int playBg(void)
 			bufferData, wave->dataSize, wave->sampleRate);
 	TEST_ERROR("failed to load buffer data");
 #else
-	alutLoadWAVFile("test2.wav", &format, &data, &size, &freq, &loop);
+	alutLoadWAVFile("test.wav", &format, &data, &size, &freq, &loop);
 	TEST_ERROR("loading wav file");
 
 	alBufferData(buffer, format, data, size, freq);
@@ -171,9 +171,4 @@ int playBg(void)
 	alcMakeContextCurrent(NULL);
 	alcDestroyContext(context);
 	alcCloseDevice(device);
-}
-
-int main(void) {
-    playBg();
-    return 0;
 }
