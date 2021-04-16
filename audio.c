@@ -172,9 +172,3 @@ int playBg(void)
 	alcDestroyContext(context);
 	alcCloseDevice(device);
 }
-
-
-int main(void) {
-    //playBg();
-    return 0;
-}
