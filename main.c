@@ -22,6 +22,9 @@ key_t msg_key;
 int id_bal;
 pthread_t keyboard;
 
+// max and min of the screen, max_x and max_y are initialised in the game loop
+int max_y = 0, max_x = 0, min_y = 1, min_x = 1;
+
 typedef struct {
     int x;
     int y;
@@ -36,8 +39,7 @@ typedef struct {
 
 typedef struct {
     int player;
-    bool up;
-    bool down;
+    int next_y;
 } message;
 
 typedef struct {
@@ -48,6 +50,10 @@ typedef struct {
     long type;
     message msg;
 } mail;
+
+// players
+player_t player1;
+player_t player2;
 
 void initTube(void) {
     mkfifo("pong.fifo",0666);
@@ -62,6 +68,9 @@ void initBal(void) {
 void *readKB() {
     int key_pressed;
     bool pressed;
+
+    int next_x, next_y;
+
     while (1) {
         pressed = false;
         //key_pressed = getch();
@@ -69,48 +78,36 @@ void *readKB() {
         read(fifo, kp, sizeof(keypressed));
         key_pressed = kp->key;
         message msg;
-        switch (key_pressed) {
-            // PLAYER 1
 
-            case 122:
+        // move player 1
+        if (key_pressed == 122 && player1.y > min_y) {
             pressed = true;
             msg.player = 1;
-            msg.up = true;
-            msg.down = false;
-            break;
-
-            case 115:
+            msg.next_y = player1.y - 2;
+        }
+        if (key_pressed == 115 && player1.y + HEIGHT_RECTANGLE < max_y - 2) {
             pressed = true;
             msg.player = 1;
-            msg.up = false;
-            msg.down = true;
-            break;
+            msg.next_y = player1.y + 2;
+        }
 
-            // PLAYER 2
-
-            case 259:
+        // move player 2
+        if (key_pressed == 259 && player2.y  > min_y) {
             pressed = true;
             msg.player = 2;
-            msg.up = true;
-            msg.down = false;
-            break;
-
-            case 258:
+            msg.next_y = player2.y - 2;
+        }
+        if (key_pressed == 258 && player2.y + HEIGHT_RECTANGLE < max_y - 2) {
             pressed = true;
             msg.player = 2;
-            msg.up = false;
-            msg.down = true;
-            break;
+            msg.next_y = player2.y + 2;
+        }
 
-            case 27:
+        if (key_pressed == 27) {
             pressed = true;
             msg.player = -1;
-            break;
-
-            default:
-            pressed = false;
-            break;
         }
+
         mail mail;
         mail.type = 1;
         if (pressed) {
@@ -118,6 +115,7 @@ void *readKB() {
         } else {
             mail.msg.player = 0;
         }
+
         CHECK(msgsnd(id_bal, (void *) &mail, sizeof(message), IPC_NOWAIT), "msgsnd()");
         usleep(DELAY);
     }
@@ -149,9 +147,6 @@ int main(void)
     
     timeout(1);             // used for getch
 
-    // max and min of the screen, max_x and max_y are initialised in the game loop
-    int max_y = 0, max_x = 0, min_y = 1, min_x = 1;
-
     // create the ball in the middle of the screen with initial directions
     ball_t ball;
     ball.x = COLS / 2;
@@ -166,17 +161,15 @@ int main(void)
 
     int key = ERR;
 
-    player_t player1;
-    player1.x = 1;
-    player1.y = 2;
-
-    player_t player2;
-    player2.x = max_x - 2 - WIDTH_RECTANGLE;
-    player2.y = 2;
-
     // random x and y directions
     int rand_x;
     int rand_y;
+
+    player1.x = 1;
+    player1.y = 2;
+
+    player2.x = max_x - 2 - WIDTH_RECTANGLE;
+    player2.y = 2;
 
     pthread_create(&keyboard, NULL, readKB, NULL);
 
@@ -228,22 +221,6 @@ int main(void)
         ball.x += ball.direction_x;
         ball.y += ball.direction_y;
 
-        // move player 1
-        if (key == 122 && player1.y > min_y) {
-            player1.y -= 2;
-        }
-        if (key == 115 && player1.y + HEIGHT_RECTANGLE < max_y - 2) {
-            player1.y += 2;
-        }
-
-        // move player 2
-        if (key == 259 && player2.y  > min_y ) {
-            player2.y -= 2;
-        }
-        if (key == 258 && player2.y + HEIGHT_RECTANGLE < max_y - 2) {
-            player2.y += 2;
-        }
-
         refresh();
         wrefresh(window);
 
@@ -256,11 +233,12 @@ int main(void)
 
         mail mail;
         msgrcv(id_bal, &mail, sizeof(message), 1, 0);
+
         if (mail.msg.player == 1) {
-            if (mail.msg.up) {key = 122;} else {key = 115;}
-        } else if (mail.msg.player == 2) { if (mail.msg.up) {key = 259;} else {key = 258;}}
-        else if (mail.msg.player == -1) {key = 27;} else {key = 0;}
-        
+            player1.y = mail.msg.next_y;
+        } else if (mail.msg.player == 2) { 
+            player2.y = mail.msg.next_y;
+        }
     }
 
     delwin(window);
