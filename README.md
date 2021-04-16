@@ -12,6 +12,8 @@ Projet de jeu en C avec utilisation d'échange entre processus par signal, boît
 `sudo apt install libopenal-dev`
 - libalut
 `sudo apt install libalut-dev`
+- libaudio
+`sudo apt install libaudio-dev`
 
 ### Compilation du projet
 
