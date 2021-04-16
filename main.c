@@ -58,7 +58,7 @@ void initTube(void) {
 }
 
 void initBal(void) {
-    msg_key = ftok("pong.queue.1", PROJID );
+    msg_key = ftok("pong.queue", PROJID );
     CHECK(id_bal = msgget(msg_key, 0666 | IPC_CREAT), "msgget()");
 }
 
