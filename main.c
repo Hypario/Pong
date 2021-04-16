@@ -10,9 +10,11 @@
 #include <sys/msg.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <signal.h>
+#include "audio.c"
 
 #define DELAY 30000
-#define PROJID 644
+#define PROJID 655
 #define WIDTH_RECTANGLE 3
 #define HEIGHT_RECTANGLE 5
 #define CHECK(sts, msg) if ((sts)==-1) {perror(msg); exit(-1);}
@@ -21,6 +23,8 @@ int fifo;
 key_t msg_key;
 int id_bal;
 pthread_t keyboard;
+pthread_t music;
+bool endgame = false;
 
 // max and min of the screen, max_x and max_y are initialised in the game loop
 int max_y = 0, max_x = 0, min_y = 1, min_x = 1;
@@ -28,6 +32,7 @@ int max_y = 0, max_x = 0, min_y = 1, min_x = 1;
 typedef struct {
     int x;
     int y;
+    int score;
 } player_t;
 
 typedef struct {
@@ -61,8 +66,21 @@ void initTube(void) {
 }
 
 void initBal(void) {
-    msg_key = ftok("pong.queue", PROJID);
-    CHECK(id_bal = msgget(msg_key, IPC_CREAT), "msgget()");
+    msg_key = 9515;
+    CHECK(id_bal = msgget(msg_key, 0666 | IPC_CREAT), "msgget()");
+}
+
+void derouteSig(int sig) {
+    if (sig == SIGUSR1) {
+        // END GAME
+        endgame = true;
+    }
+}
+
+void *playMusic() {
+    while (1) {
+        playBg();
+    }
 }
 
 void *readKB() {
@@ -105,6 +123,7 @@ void *readKB() {
         if (key_pressed == 27) {
             pressed = true;
             msg.player = -1;
+            kill(getpid(), SIGUSR1);
         }
 
         mail mail;
@@ -118,6 +137,11 @@ void *readKB() {
         CHECK(msgsnd(id_bal, (void *) &mail, sizeof(message), IPC_NOWAIT), "msgsnd()");
         usleep(DELAY);
     }
+}
+
+void printscores(player_t player1, player_t player2, WINDOW  * win) {
+    mvwprintw(win,1,COLS/2,"%i | %i",player1.score,player2.score);
+
 }
 
 void render_player(WINDOW *window, player_t player) {
@@ -139,6 +163,7 @@ int main(void)
 {
     initBal();
     initTube();
+    signal(SIGUSR1, derouteSig);
     initscr();              // Initialise la structure WINDOW et autres paramètres
     noecho();               // no display when typing
     keypad(stdscr, TRUE);
@@ -166,25 +191,36 @@ int main(void)
 
     player1.x = 1;
     player1.y = 2;
+    player1.score = 0;
 
     player2.x = max_x - 2 - WIDTH_RECTANGLE;
     player2.y = 2;
 
     pthread_create(&keyboard, NULL, readKB, NULL);
+    pthread_create(&music, NULL, playMusic, NULL);
+    mail mail;
 
-    while (key != 27) {
+    while (!endgame) {
+
+        // check scores of players
+        if (player1.score == 10 || player2.score == 10) {
+            kill(getpid(), SIGUSR1);
+        }
+        
         getmaxyx(window, max_y, max_x); // stdscr is created because of initscr
         werase(window); // clean content of window
-
+        
         box(window, ACS_VLINE, ACS_HLINE); // ACS_VLINE et ACS_HLINE sont des constantes qui génèrent des bordures par défaut
-
+        //printscores(player1, player2);
+        printscores(player1, player2, window);
         mvwprintw(window, ball.y, ball.x, "o");
 
         usleep(DELAY);
 
         render_player(window, player1);
         render_player(window, player2);
-
+        
+        
         // move the ball
 
         // check collision
@@ -200,6 +236,11 @@ int main(void)
         }
 
         if (ball.x + ball.direction_x >= max_x || ball.x + ball.direction_x < min_x) {
+            if (ball.x + ball.direction_x >= max_x ) {
+                player1.score += 1;
+            } else if (ball.x + ball.direction_x < min_x) {
+                player2.score += 1;
+            }
             ball.x = COLS / 2;
             ball.y = LINES / 2;
 
@@ -230,7 +271,7 @@ int main(void)
         write(fifo, &kp, sizeof(keypressed));
 
 
-        mail mail;
+        
         msgrcv(id_bal, &mail, sizeof(message), 1, 0);
 
         if (mail.msg.player == 1) {
@@ -243,6 +284,12 @@ int main(void)
     delwin(window);
     CHECK(msgctl(id_bal, IPC_RMID, NULL), "Erreur lors de la suppression\n");
     endwin();
+
+
+    printf("---------------------------------------------------------------------------\n");
+    printf("Score du joueur 1 : %d\n", player1.score);
+    printf("Score du joueur 2 : %d\n", player2.score);
+    printf("----------------------------------------------------------------------------\n");
 
     return 0;
 }

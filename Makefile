@@ -9,7 +9,10 @@ LDLIBS+=-lalut
 %.o: %.c
 		gcc -o $@ $< $(LDLIBS) 
 
-all: $(OBJS)
+pong:
+	gcc -o main.o $(LDLIBS) main.c -Wno-deprecated-declarations
+
+all: pong
 
 clean:
 	rm *.o
