@@ -66,7 +66,7 @@ void initTube(void) {
 }
 
 void initBal(void) {
-    msg_key = 9515;
+    msg_key = 15688;
     CHECK(id_bal = msgget(msg_key, 0666 | IPC_CREAT), "msgget()");
 }
 
