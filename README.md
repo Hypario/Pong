@@ -24,6 +24,11 @@ Projet de jeu en C avec utilisation d'échange entre processus par signal, boît
 Après avoir compilé le projet avec la commande make, exécuter :
 `./main.o`
 
+## Architecture du logiciel 
+
+![Schéma d'architecture logicielle](./schem.png)
+
+
 ## Crédit
 
 - Exemple d'utilisation OpenAL en C pour lire un fichier WAV : [ici](https://github.com/ffainelli/openal-example)
