@@ -61,7 +61,7 @@ void initTube(void) {
 }
 
 void initBal(void) {
-    msg_key = ftok("pong.queue", PROJID );
+    msg_key = ftok("pong.queue", PROJID);
     CHECK(id_bal = msgget(msg_key, IPC_CREAT), "msgget()");
 }
 
@@ -73,10 +73,9 @@ void *readKB() {
 
     while (1) {
         pressed = false;
-        //key_pressed = getch();
-        keypressed *kp;
-        read(fifo, kp, sizeof(keypressed));
-        key_pressed = kp->key;
+        keypressed kp;
+        read(fifo, &kp, sizeof(keypressed));
+        key_pressed = kp.key;
         message msg;
 
         // move player 1
