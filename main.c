@@ -25,6 +25,7 @@ pthread_t keyboard;
 typedef struct {
     int x;
     int y;
+    int score;
 } player_t;
 
 typedef struct {
@@ -123,6 +124,11 @@ void *readKB() {
     }
 }
 
+void printscores(player_t player1, player_t player2) {
+    mvprintw(1,COLS/2,"%i | %i",player1.score,player2.score);
+
+}
+
 void render_player(WINDOW *window, player_t player) {
     int x2 = player.x + WIDTH_RECTANGLE, y2 = player.y + HEIGHT_RECTANGLE;
 
@@ -169,11 +175,12 @@ int main(void)
     player_t player1;
     player1.x = 1;
     player1.y = 2;
+    player1.score = 0;
 
     player_t player2;
     player2.x = max_x - 2 - WIDTH_RECTANGLE;
     player2.y = 2;
-
+    player2.score = 0;
     // random x and y directions
     int rand_x;
     int rand_y;
@@ -186,16 +193,17 @@ int main(void)
         
         getmaxyx(window, max_y, max_x); // stdscr is created because of initscr
         werase(window); // clean content of window
-
+        printscores(player1, player2);
         box(window, ACS_VLINE, ACS_HLINE); // ACS_VLINE et ACS_HLINE sont des constantes qui génèrent des bordures par défaut
-
+        printscores(player1, player2);
         mvwprintw(window, ball.y, ball.x, "o");
 
         usleep(DELAY);
 
         render_player(window, player1);
         render_player(window, player2);
-
+        
+        
         // move the ball
 
         // check collision
@@ -211,6 +219,11 @@ int main(void)
         }
 
         if (ball.x + ball.direction_x >= max_x || ball.x + ball.direction_x < min_x) {
+            if (ball.direction_x >= max_x ) {
+                player1.score += 1;
+            } else {
+                player2.score += 1;
+            }
             ball.x = COLS / 2;
             ball.y = LINES / 2;
 
@@ -266,10 +279,6 @@ int main(void)
 
         
         msgrcv(id_bal, &mail, sizeof(message), 1, 0);
-        if (mail.msg.player == 1) {
-            if (mail.msg.up) {key = 122;} else {key = 115;}
-        } else if (mail.msg.player == 2) { if (mail.msg.up) {key = 259;} else {key = 258;}}
-        else if (mail.msg.player == -1) {key = 27;} else {key = 0;}
         
     }
 

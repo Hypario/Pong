@@ -74,6 +74,7 @@ int qid;
 
 pthread_t messages_thread;
 pthread_t game_thread;
+pthread_t music_thread;
 
 bool game_started = false; // todo : change for semaphore
 
@@ -248,6 +249,7 @@ int main(void) {
     CHECK(qid = msgget(key, 0666 | IPC_CREAT), "error creating message queue\n");
     info(qid, buff);
 
+    //pthread_create(&music_thread, NULL, playMusic, NULL);
     pthread_create(&messages_thread, NULL, handle_messages, NULL);
     pthread_create(&game_thread, NULL, handle_game, NULL);
 
