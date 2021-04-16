@@ -2,13 +2,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
 #include <ctype.h>
+#include <pthread.h>
 
 #define DELAY 30000
-
+#define PROJID 644
 #define WIDTH_RECTANGLE 3
 #define HEIGHT_RECTANGLE 5
+#define CHECK(sts, msg) if ((sts)==-1) {perror(msg); exit(-1);}
+
+int fifo;
+key_t msg_key;
+int id_bal;
+pthread_t keyboard;
 
 typedef struct {
     int x;
@@ -21,6 +33,95 @@ typedef struct {
     int direction_x;
     int direction_y;
 } ball_t;
+
+typedef struct {
+    int player;
+    bool up;
+    bool down;
+} message;
+
+typedef struct {
+    int key;
+} keypressed;
+
+typedef struct {
+    long type;
+    message msg;
+} mail;
+
+void initTube(void) {
+    mkfifo("pong.fifo",0666);
+    fifo = open("pong.fifo", O_RDWR);
+}
+
+void initBal(void) {
+    msg_key = ftok("pong.queue", PROJID );
+    CHECK(id_bal = msgget(msg_key, IPC_CREAT), "msgget()");
+}
+
+void *readKB() {
+    int key_pressed;
+    bool pressed;
+    while (1) {
+        pressed = false;
+        //key_pressed = getch();
+        keypressed *kp;
+        read(fifo, kp, sizeof(keypressed));
+        key_pressed = kp->key;
+        message msg;
+        switch (key_pressed) {
+            // PLAYER 1
+
+            case 122:
+            pressed = true;
+            msg.player = 1;
+            msg.up = true;
+            msg.down = false;
+            break;
+
+            case 115:
+            pressed = true;
+            msg.player = 1;
+            msg.up = false;
+            msg.down = true;
+            break;
+
+            // PLAYER 2
+
+            case 259:
+            pressed = true;
+            msg.player = 2;
+            msg.up = true;
+            msg.down = false;
+            break;
+
+            case 258:
+            pressed = true;
+            msg.player = 2;
+            msg.up = false;
+            msg.down = true;
+            break;
+
+            case 27:
+            pressed = true;
+            msg.player = -1;
+            break;
+
+            default:
+            pressed = false;
+            break;
+        }
+        mail mail;
+        mail.type = 1;
+        if (pressed) {
+            mail.msg = msg;
+        } else {
+            mail.msg.player = 0;
+        }
+        CHECK(msgsnd(id_bal, (void *) &mail, sizeof(message), IPC_NOWAIT), "msgsnd()");
+        usleep(DELAY);
+    }
+}
 
 void render_player(WINDOW *window, player_t player) {
     int x2 = player.x + WIDTH_RECTANGLE, y2 = player.y + HEIGHT_RECTANGLE;
@@ -39,6 +140,8 @@ void render_player(WINDOW *window, player_t player) {
 
 int main(void) 
 {
+    initBal();
+    initTube();
     initscr();              // Initialise la structure WINDOW et autres paramètres
     noecho();               // no display when typing
     keypad(stdscr, TRUE);
@@ -74,6 +177,8 @@ int main(void)
     // random x and y directions
     int rand_x;
     int rand_y;
+
+    pthread_create(&keyboard, NULL, readKB, NULL);
 
     while (key != 27) {
         getmaxyx(window, max_y, max_x); // stdscr is created because of initscr
@@ -142,11 +247,24 @@ int main(void)
         refresh();
         wrefresh(window);
 
-        key = getch();
+        int mykey = getch();
+        
+        keypressed kp;
+        kp.key = mykey;
+        write(fifo, &kp, sizeof(keypressed));
+
+
+        mail mail;
+        msgrcv(id_bal, &mail, sizeof(message), 1, 0);
+        if (mail.msg.player == 1) {
+            if (mail.msg.up) {key = 122;} else {key = 115;}
+        } else if (mail.msg.player == 2) { if (mail.msg.up) {key = 259;} else {key = 258;}}
+        else if (mail.msg.player == -1) {key = 27;} else {key = 0;}
+        
     }
 
     delwin(window);
-
+    CHECK(msgctl(id_bal, IPC_RMID, NULL), "Erreur lors de la suppression\n");
     endwin();
 
     return 0;
