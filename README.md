@@ -32,5 +32,5 @@ Après avoir compilé le projet avec la commande make, exécuter :
 ## Crédit
 
 - Exemple d'utilisation OpenAL en C pour lire un fichier WAV : [ici](https://github.com/ffainelli/openal-example)
-- Musique de fond : [DAFT PUNK - Robot Rock](https://www.youtube.com/watch?v=sFZjqVnWBhc)
+- Musique de fond : [KAJAGOOGOO - Too Shy](https://www.youtube.com/watch?v=rkpG4XApJ28)
 
