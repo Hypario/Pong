@@ -13,7 +13,7 @@
 #include <signal.h>
 
 #define DELAY 30000
-#define PROJID 644
+#define PROJID 655
 #define WIDTH_RECTANGLE 3
 #define HEIGHT_RECTANGLE 5
 #define CHECK(sts, msg) if ((sts)==-1) {perror(msg); exit(-1);}
@@ -58,8 +58,8 @@ void initTube(void) {
 }
 
 void initBal(void) {
-    msg_key = ftok("pong.queue", PROJID );
-    CHECK(id_bal = msgget(msg_key, IPC_CREAT), "msgget()");
+    msg_key = ftok("pong.queue.1", PROJID );
+    CHECK(id_bal = msgget(msg_key, 0666 | IPC_CREAT), "msgget()");
 }
 
 void derouteSig(int sig) {
