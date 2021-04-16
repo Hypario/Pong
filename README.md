@@ -26,7 +26,7 @@ Après avoir compilé le projet avec la commande make, exécuter :
 
 ## Architecture du logiciel 
 
-![Schéma d'architecture logicielle](./schem.png)
+![Schéma d'architecture logicielle](./shem.png)
 
 
 ## Crédit
