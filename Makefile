@@ -14,5 +14,8 @@ pong:
 
 all: pong
 
+pong_nosound:
+	gcc -o main.o main_noOpenAL.c -lncurses -lpthread
+
 clean:
 	rm *.o
